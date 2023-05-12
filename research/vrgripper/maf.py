@@ -52,14 +52,15 @@ def maf_bijector(event_size, num_flows, hidden_layers):
   """Construct a chain of MAF flows into a single bijector."""
   bijectors = []
   for i in range(num_flows):
-    bijectors.append(tfb.MaskedAutoregressiveFlow(
-        shift_and_log_scale_fn=tfb.masked_autoregressive_default_template(
-            hidden_layers=hidden_layers)))
-    bijectors.append(
-        tfb.Permute(
-            permutation=init_once(
-                np.random.permutation(event_size).astype('int32'),
-                name='permute_%d' % i)))
+    bijectors.extend((
+        tfb.MaskedAutoregressiveFlow(
+            shift_and_log_scale_fn=tfb.masked_autoregressive_default_template(
+                hidden_layers=hidden_layers)),
+        tfb.Permute(permutation=init_once(
+            np.random.permutation(event_size).astype('int32'),
+            name='permute_%d' % i,
+        )),
+    ))
   # Chain the bijectors, leaving out the last permutation bijector.
   return tfb.Chain(list(reversed(bijectors[:-1])))
 

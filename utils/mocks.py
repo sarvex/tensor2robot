@@ -153,10 +153,7 @@ class MockT2RModel(abstract_model.AbstractT2RModel):
                            params=None):
     """See base class documentation."""
     del mode, config, params
-    if self._multi_dataset:
-      net = features.x1 + features.x2
-    else:
-      net = features.x
+    net = features.x1 + features.x2 if self._multi_dataset else features.x
     for pos, activations in enumerate([32, 16, 8]):
       # tf.keras does not support variable_scope and custom_getter.
       # Therefore, we cannot use this api yet for meta learning models.
@@ -167,13 +164,11 @@ class MockT2RModel(abstract_model.AbstractT2RModel):
           net,
           units=activations,
           activation=tf.nn.elu,
-          name='MockT2RModel.dense.{}'.format(pos))
-      net = tf.layers.batch_normalization(
-          net, name='MockT2RModel.batch_norm.{}'.format(pos))
+          name=f'MockT2RModel.dense.{pos}',
+      )
+      net = tf.layers.batch_normalization(net, name=f'MockT2RModel.batch_norm.{pos}')
     net = tf.layers.dense(net, units=1, name='MockT2RModel.dense.4')
-    inference_outputs = {}
-    inference_outputs['logit'] = net
-    return inference_outputs
+    return {'logit': net}
 
   def model_train_fn(self,
                      features,
@@ -203,10 +198,11 @@ class MockTF2T2RModel(MockT2RModel, tf.Module):
             tf.keras.layers.Dense(
                 units=activations,
                 activation=tf.keras.activations.elu,
-                name='MockTF2T2RModel.dense.{}'.format(pos)))
+                name=f'MockTF2T2RModel.dense.{pos}',
+            ))
         self._model.add(
             tf.keras.layers.BatchNormalization(
-                name='MockTF2T2RModel.batch_norm.{}'.format(pos)))
+                name=f'MockTF2T2RModel.batch_norm.{pos}'))
     self._model.add(
         tf.keras.layers.Dense(units=1, name='MockTF2T2RModel.dense.4'))
 

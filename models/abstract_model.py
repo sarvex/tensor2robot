@@ -121,8 +121,9 @@ def default_init_from_checkpoint_fn(
       logging.warning('Variable %s is not in the checkpoint, skipping.',
                       op_name)
     else:
-      raise ValueError('Attempting to restore variable {} which is '
-                       'not in the checkpoint.'.format(op_name))
+      raise ValueError(
+          f'Attempting to restore variable {op_name} which is not in the checkpoint.'
+      )
   tf.train.init_from_checkpoint(checkpoint, assignment_map)
 
 
@@ -398,8 +399,7 @@ class AbstractT2RModel(
       ValueError: If the model should run on a TPU.
     """
     if self.is_device_tpu:
-      raise ValueError('This model {} does not support TPUs'.format(
-          self.__name__))
+      raise ValueError(f'This model {self.__name__} does not support TPUs')
 
   @abc.abstractmethod
   def inference_network_fn(
@@ -831,7 +831,7 @@ class AbstractT2RModel(
           eval_metric_ops=eval_metrics,
           evaluation_hooks=evaluation_hooks)
 
-    raise ValueError('The mode {} is not supported yet.'.format(mode))
+    raise ValueError(f'The mode {mode} is not supported yet.')
 
   def create_optimizer(self, params):
     """Create the optimizer used for training.
@@ -888,9 +888,7 @@ class AbstractT2RModel(
     """
     if self.is_device_tpu:
       return False
-    if params is not None and not params.get('use_summaries', True):
-      return False
-    return True
+    return bool(params is None or params.get('use_summaries', True))
 
   def get_run_config(self):
     """Get the RunConfig for Estimator model.

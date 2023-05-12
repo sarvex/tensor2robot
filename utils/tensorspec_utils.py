@@ -99,12 +99,12 @@ class ExtendedTensorSpec(TSPEC, object):
     if self._varlen_default_value is not None:
       if data_format is None and len(self.shape) != 1:
         raise ValueError(
-            ('VarLenFeatures are only supported for shapes of rank 1 ({}) when '
-             'not using an image spec.').format(shape))
+            f'VarLenFeatures are only supported for shapes of rank 1 ({shape}) when not using an image spec.'
+        )
       if data_format is not None and len(self.shape) != 4:
         raise ValueError(
-            ('VarLenFeatures are only supported for shapes of rank 4 ({}) when '
-             'using an image spec.').format(shape))
+            f'VarLenFeatures are only supported for shapes of rank 4 ({shape}) when using an image spec.'
+        )
 
   @classmethod
   def from_spec(cls,
@@ -119,7 +119,7 @@ class ExtendedTensorSpec(TSPEC, object):
                 dataset_key = None,
                 batch_size = None,
                 varlen_default_value = None):
-    if not (isinstance(spec, TSPEC) or isinstance(spec, ExtendedTensorSpec)):
+    if not (isinstance(spec, (TSPEC, ExtendedTensorSpec))):
       raise ValueError('from_spec requires TensorSpec or ExtendedTensorSpec.')
 
     if is_optional is None:
@@ -131,10 +131,8 @@ class ExtendedTensorSpec(TSPEC, object):
     if is_extracted is None:
       is_extracted = getattr(spec, 'is_extracted', False)
 
-    if data_format is None:
-      # To support the usage of the base TensorSpec.
-      if hasattr(spec, 'data_format'):
-        data_format = spec.data_format
+    if data_format is None and hasattr(spec, 'data_format'):
+      data_format = spec.data_format
 
     if dataset_key is None:
       dataset_key = getattr(spec, 'dataset_key', '')
@@ -226,8 +224,8 @@ class ExtendedTensorSpec(TSPEC, object):
           shape=instance.shape, dtype=tf.as_dtype(instance.dtype),
           is_extracted=True)
     raise ValueError(
-        'We cannot convert {} with type {} to ExtendedTensorSpec'.format(
-            instance, type(instance)))
+        f'We cannot convert {instance} with type {type(instance)} to ExtendedTensorSpec'
+    )
 
   @property
   def is_optional(self):
@@ -264,13 +262,7 @@ class ExtendedTensorSpec(TSPEC, object):
             and self.dtype == other.dtype)
 
   def __repr__(self):
-    return ('ExtendedTensorSpec(shape={}, dtype={}, name={}, is_optional={}, '
-            'is_sequence={}, is_extracted={}, data_format={}, '
-            'dataset_key={}, varlen_default_value={})').format(
-                self.shape, repr(self.dtype), repr(self.name),
-                repr(self.is_optional), repr(self.is_sequence),
-                repr(self.is_extracted), repr(self.data_format),
-                repr(self.dataset_key), repr(self.varlen_default_value))
+    return f'ExtendedTensorSpec(shape={self.shape}, dtype={repr(self.dtype)}, name={repr(self.name)}, is_optional={repr(self.is_optional)}, is_sequence={repr(self.is_sequence)}, is_extracted={repr(self.is_extracted)}, data_format={repr(self.data_format)}, dataset_key={repr(self.dataset_key)}, varlen_default_value={repr(self.varlen_default_value)})'
 
   def __reduce__(self):
     return ExtendedTensorSpec, (self._shape, self._dtype, self._name,
@@ -282,8 +274,7 @@ class ExtendedTensorSpec(TSPEC, object):
 class _OrderedDictKeysView(collections.KeysView):
 
   def __reversed__(self):
-    for key in reversed(self._mapping):  # pytype: disable=attribute-error
-      yield key
+    yield from reversed(self._mapping)
 
 
 class _OrderedDictItemsView(collections.ItemsView):
@@ -427,11 +418,9 @@ class TensorSpecStruct(collections.OrderedDict):
     t2r_tensor_spec_struct = t2r_pb2.TensorSpecStruct()
     for key, value in self.items():
       if not hasattr(value, 'to_proto'):
-        raise ValueError('Only data structures which support to_proto, e.g.'
-                         'ExtendedTensorSpec are allowed within a '
-                         'TensorSpecStruct when convertig to a proto. The type '
-                         'for key {} is however {} with the value {}.'.format(
-                             key, type(value), value))
+        raise ValueError(
+            f'Only data structures which support to_proto, e.g.ExtendedTensorSpec are allowed within a TensorSpecStruct when convertig to a proto. The type for key {key} is however {type(value)} with the value {value}.'
+        )
       t2r_tensor_spec_struct.key_value[key].CopyFrom(value.to_proto())
     return t2r_tensor_spec_struct
 
@@ -471,8 +460,7 @@ class TensorSpecStruct(collections.OrderedDict):
       key_current = key_split_into_hierarchy.pop(0)
       if key_current not in hierarchy:
         raise AttributeError(
-            'No attribute with the name {} exists for {}'.format(
-                key_current, self))
+            f'No attribute with the name {key_current} exists for {self}')
 
       hierarchy = hierarchy[key_current]
 
@@ -496,7 +484,7 @@ class TensorSpecStruct(collections.OrderedDict):
     if isinstance(value, (TensorSpecStruct, dict)):
       for sub_key, sub_value in value.items():
         # Note, do not add the path prefix here since it is a recursion.
-        self[key + '/' + sub_key] = sub_value
+        self[f'{key}/{sub_key}'] = sub_value
     else:
       # Note, add the path prefix here since it is the end of the recursion.
       super(TensorSpecStruct,
@@ -511,8 +499,7 @@ class TensorSpecStruct(collections.OrderedDict):
     if isinstance(item, (TensorSpecStruct, dict)):
       for key, value in item.items():
         # Note, do not add the path prefix here since it is a recursion.
-        self._add_to_dict(dict_instance,
-                          name + '/' + key, value)
+        self._add_to_dict(dict_instance, f'{name}/{key}', value)
     else:
       # Note, add the path prefix here since it is the end of the recursion.
       dict_instance[self._add_path_prefix(name)] = item
@@ -527,9 +514,7 @@ class TensorSpecStruct(collections.OrderedDict):
   def __iter__(self, *args, **kwargs):
     if self._dict_view is None:
       # We simply yield through all keys, the default implementation.
-      for value in super(TensorSpecStruct, self).__iter__(
-          *args, **kwargs):
-        yield value
+      yield from super(TensorSpecStruct, self).__iter__(*args, **kwargs)
     else:
       # We are a view, hence we want to only show our part of the path and
       # strip the prefix away.
@@ -544,7 +529,7 @@ class TensorSpecStruct(collections.OrderedDict):
     """
     return [
         key for key in self._dict_view.keys()
-        if key.startswith(self._path_prefix + '/')
+        if key.startswith(f'{self._path_prefix}/')
     ]
 
   def _strip_path_prefix(self, path):
@@ -567,9 +552,7 @@ class TensorSpecStruct(collections.OrderedDict):
     Returns:
       The prefix properly stripped away.
     """
-    if self._path_prefix:
-      return self._path_prefix + '/' + path
-    return path
+    return f'{self._path_prefix}/{path}' if self._path_prefix else path
 
   def _check_valid_types_for_assignment(self, item):
     """Checks that we only have valid types for assignment.
@@ -609,15 +592,13 @@ class TensorSpecStruct(collections.OrderedDict):
     #       'TensorSpecStruct, and dicts can be assigned. but item '
     #       'is {} with type {}.'.format(item, type(item)))
 
-    if isinstance(item, TensorSpecStruct):
-      if not item:
-        raise ValueError(
-            'We cannot assign an empty TensorSpecStruct. '
-            'Please, first fill another TensorSpecStruct and '
-            'add it to this instance.')
-    if isinstance(item, dict):
-      if not item:
-        raise ValueError('We cannot assign an empty dict.')
+    if isinstance(item, TensorSpecStruct) and not item:
+      raise ValueError(
+          'We cannot assign an empty TensorSpecStruct. '
+          'Please, first fill another TensorSpecStruct and '
+          'add it to this instance.')
+    if isinstance(item, dict) and not item:
+      raise ValueError('We cannot assign an empty dict.')
     return item
 
   def __delitem__(self, key):
@@ -642,7 +623,7 @@ class TensorSpecStruct(collections.OrderedDict):
     if item.startswith('_'):
       # Maintain the normal behavior of the dict required for proper
       # initializing the OrderedDict.
-      raise AttributeError('The attribute {} does not exist.'.format(item))
+      raise AttributeError(f'The attribute {item} does not exist.')
     return self[item]
 
   def _create_hierarchy(self, items):
@@ -727,9 +708,8 @@ def cast_float32_to_bfloat16(tensor_spec_struct,
     if value is not None and value.dtype == tf.bfloat16:
       if tensor_spec_struct[key].dtype != tf.float32:
         raise ValueError(
-            'Attempting to convert non tf.float32 type {} to tf.bfloat16 '
-            'for the element {} with the name {}.'.format(
-                tensor_spec_struct[key].dtype, tensor_spec_struct[key], key))
+            f'Attempting to convert non tf.float32 type {tensor_spec_struct[key].dtype} to tf.bfloat16 for the element {tensor_spec_struct[key]} with the name {key}.'
+        )
       tensor_spec_struct[key] = tf.cast(
           tensor_spec_struct[key], dtype=tf.bfloat16)
   return tensor_spec_struct
@@ -959,8 +939,7 @@ def map_feed_dict(spec_placeholders,
   for key, value in spec_numpy.items():
     placeholder = spec_placeholders[key]
     if placeholder in feed_dict:
-      raise ValueError(
-          'We would overwrite existing placeholder mapping {}.'.format(key))
+      raise ValueError(f'We would overwrite existing placeholder mapping {key}.')
     feed_dict[spec_placeholders[key]] = value
   return feed_dict
 
@@ -1003,8 +982,7 @@ def map_predict_fn_dict(spec_structure,
       continue
 
     if key in feed_dict:
-      raise ValueError(
-          'We would overwrite existing placeholder mapping {}.'.format(key))
+      raise ValueError(f'We would overwrite existing placeholder mapping {key}.')
     feed_dict[key] = value
   return feed_dict
 
@@ -1034,10 +1012,7 @@ def map_feed_dict_unsafe(feature_placeholders_spec, np_inputs_spec):
     if key not in flat_spec:
       logging.warn(
           'np_inputs has an input: %s, not found in the tensorspec.', key)
-  feed_dict = {}
-  for key, value in flat_spec.items():
-    feed_dict[value] = flat_np_inputs[key]
-  return feed_dict
+  return {value: flat_np_inputs[key] for key, value in flat_spec.items()}
 
 
 def tensorspec_from_tensors(tensors):
@@ -1122,21 +1097,19 @@ def assert_equal_spec_or_tensor(expected_spec_or_tensor, actual_spec_or_tensor):
 
   if expected_spec.dtype != actual_spec.dtype:
     raise ValueError(
-        'TensorSpec.dtype {} does not match TensorSpec.dtype {} in specs'
-        '\n expected: {}\n actual: {}'.format(
-            expected_spec.dtype, actual_spec.dtype, expected_spec, actual_spec))
+        f'TensorSpec.dtype {expected_spec.dtype} does not match TensorSpec.dtype {actual_spec.dtype} in specs\n expected: {expected_spec}\n actual: {actual_spec}'
+    )
   if len(expected_spec.shape) != len(actual_spec.shape):
     raise ValueError(
-        'TensorSpec.shape {} does not match TensorSpec.shape {} in specs'
-        '\n expected: {}\n actual: {}'.format(
-            expected_spec.shape, actual_spec.shape, expected_spec, actual_spec))
+        f'TensorSpec.shape {expected_spec.shape} does not match TensorSpec.shape {actual_spec.shape} in specs\n expected: {expected_spec}\n actual: {actual_spec}'
+    )
   for expected_dim, actual_dim in zip(expected_spec.shape, actual_spec.shape):
     if expected_dim is None:
       continue
     if expected_dim != actual_dim:
       raise ValueError(
-          'TensorSpec.shape {} does not match TensorSpec.shape {}.'.format(
-              expected_spec.shape, actual_spec.shape))
+          f'TensorSpec.shape {expected_spec.shape} does not match TensorSpec.shape {actual_spec.shape}.'
+      )
 
 
 def assert_equal(expected_tensors_or_spec,
@@ -1283,8 +1256,8 @@ def add_sequence_length_specs(
   flat_spec_structure = flatten_spec_structure(spec_structure)
   for key, value in flat_spec_structure.items():
     if value.is_sequence:
-      flat_spec_structure[key + '_length'] = ExtendedTensorSpec(
-          shape=(), dtype=tf.int64, name=value.name + '_length')
+      flat_spec_structure[f'{key}_length'] = ExtendedTensorSpec(
+          shape=(), dtype=tf.int64, name=f'{value.name}_length')
   return flat_spec_structure
 
 
@@ -1392,9 +1365,9 @@ def pack_flat_sequence_to_spec_structure(
 
   if not is_flat_spec_or_tensors_structure(
       flat_sequence_with_joined_string_paths):
-    raise ValueError('The provided flat_sequence_with_joined_string_paths is '
-                     'not a flat sequence {}.'.format(
-                         flat_sequence_with_joined_string_paths))
+    raise ValueError(
+        f'The provided flat_sequence_with_joined_string_paths is not a flat sequence {flat_sequence_with_joined_string_paths}.'
+    )
 
   # We want to query our flat sequence by keys, hence, we convert it to a dict.
   flat_sequence = dict(list(flat_sequence_with_joined_string_paths.items()))
@@ -1419,8 +1392,7 @@ def pack_flat_sequence_to_spec_structure(
       filtered_flat_sequence.append(None)
       continue
 
-    raise ValueError('The required {} spec {} is not available.'.format(
-        key, tensor_spec))
+    raise ValueError(f'The required {key} spec {tensor_spec} is not available.')
 
   # Now that we have made sure that we only have the required and optional
   # specs in the filtered_flat_sequence
@@ -1441,23 +1413,23 @@ def is_flat_spec_or_tensors_structure(spec_or_tensors):
 
   # We only have a tensor_spec_struct_or_tensors if we have a dict or
   # ordered dict with TensorSpec, Tensor or numpy array.
-  if isinstance(spec_or_tensors, dict) or isinstance(spec_or_tensors,
-                                                     collections.OrderedDict):
-    # We have to check any element of our dict or OrderedDict.
-    for value in spec_or_tensors.values():
-      if isinstance(value, contrib_framework.TensorSpec):
-        continue
-      if isinstance(value, tf.Tensor):
-        continue
-      if isinstance(value, np.ndarray):
-        continue
+  if not isinstance(spec_or_tensors, dict) and not isinstance(
+      spec_or_tensors, collections.OrderedDict):
+    # Not a dict or OrderedDict, hence, not a proper flat structure.
+    return False
+  # We have to check any element of our dict or OrderedDict.
+  for value in spec_or_tensors.values():
+    if isinstance(value, contrib_framework.TensorSpec):
+      continue
+    if isinstance(value, tf.Tensor):
+      continue
+    if isinstance(value, np.ndarray):
+      continue
 
-      # An unsupported type in our dict, hence, it's not a proper flat
-      # structure.
-      return False
-    return True
-  # Not a dict or OrderedDict, hence, not a proper flat structure.
-  return False
+    # An unsupported type in our dict, hence, it's not a proper flat
+    # structure.
+    return False
+  return True
 
 
 def assert_valid_spec_structure(
@@ -1482,19 +1454,18 @@ def assert_valid_spec_structure(
   # If we don't have a set used_tensorspec_names that means we are at the
   # top level and need to be initialized.
   if used_tensorspec_names is None:
-    used_tensorspec_names = dict()
+    used_tensorspec_names = {}
   if isinstance(spec_structure, tuple) and hasattr(spec_structure, '_asdict'):
     # namedtuple is not a type so we check that the tuple implements the
     # minimal namedtuple interface we need, namely the _asdict() function.
     spec_structure = spec_structure._asdict()
 
-  if isinstance(spec_structure, dict) or isinstance(spec_structure,
-                                                    collections.OrderedDict):
+  if isinstance(spec_structure, (dict, collections.OrderedDict)):
     # We have to check any element of our dict or OrderedDict. Since we also
     # support lists, we can simply introspect the values.
     spec_structure = list(spec_structure.values())
 
-  if isinstance(spec_structure, list) or isinstance(spec_structure, tuple):
+  if isinstance(spec_structure, (list, tuple)):
     for value in spec_structure:
       if isinstance(value, contrib_framework.TensorSpec):
         # We only add non None TensorSpec names. These names have to be unique
@@ -1507,11 +1478,8 @@ def assert_valid_spec_structure(
                                           value)
             except ValueError:
               raise ValueError(
-                  'All TensorSpecs with a name defined have to be unique '
-                  'or non unique specs have to define the same shape and dtype'
-                  'within our spec_structure. Yet, the name {} is defined '
-                  'twice and describes different specs {} vs {}.'.format(
-                      value.name, value, used_tensorspec_names[value.name]))
+                  f'All TensorSpecs with a name defined have to be unique or non unique specs have to define the same shape and dtypewithin our spec_structure. Yet, the name {value.name} is defined twice and describes different specs {value} vs {used_tensorspec_names[value.name]}.'
+              )
           used_tensorspec_names[value.name] = value
         continue
       if isinstance(value, tf.Tensor):
@@ -1525,8 +1493,9 @@ def assert_valid_spec_structure(
       assert_valid_spec_structure(value, used_tensorspec_names)
     return
 
-  raise ValueError('We only support spec_structures of (hierarchical) '
-                   'dicts or namedtuples, not {}.'.format(type(spec_structure)))
+  raise ValueError(
+      f'We only support spec_structures of (hierarchical) dicts or namedtuples, not {type(spec_structure)}.'
+  )
 
 
 def filter_required_flat_tensor_spec(flat_tensor_spec):
@@ -1561,11 +1530,10 @@ def is_encoded_image_spec(tensor_spec):
     # If tensor_spec is an ExtendedTensorSpec, use the data_format to check.
     return (tensor_spec.data_format is not None) and (
         tensor_spec.data_format.upper() in ['JPEG', 'PNG'])
-  else:
-    # Otherwise default to the old "name contains 'image'" logic.
-    logging.warn('Using a deprecated tensor specification. '
-                 'Use ExtendedTensorSpec.')
-    return 'image' in tensor_spec.name
+  # Otherwise default to the old "name contains 'image'" logic.
+  logging.warn('Using a deprecated tensor specification. '
+               'Use ExtendedTensorSpec.')
+  return 'image' in tensor_spec.name
 
 
 def _get_feature(tensor_spec,
@@ -1710,7 +1678,7 @@ def write_input_spec_to_file(in_feature_spec, in_label_spec, filename):
 def load_input_spec_from_file(filename):
   """Reads feature and label specifications from file."""
   if not tf.io.gfile.exists(filename):
-    raise ValueError('The file {} does not exist.'.format(filename))
+    raise ValueError(f'The file {filename} does not exist.')
   with tf.io.gfile.GFile(filename, 'r') as f:
     spec_data = cPickle.load(f)
   feature_spec = spec_data['in_feature_spec']
@@ -1727,7 +1695,7 @@ def write_global_step_to_file(global_step, filename):
 def load_global_step_from_file(filename):
   """Reads feature and label specifications from file."""
   if not tf.io.gfile.exists(filename):
-    raise ValueError('The file {} does not exist.'.format(filename))
+    raise ValueError(f'The file {filename} does not exist.')
   with tf.io.gfile.GFile(filename, 'r') as f:
     spec_data = cPickle.load(f)
   return spec_data['global_step']

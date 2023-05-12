@@ -38,7 +38,7 @@ class TFRecordReplayWriter(object):
     if not tf.gfile.IsDirectory(path_dirname):
       tf.gfile.MakeDirs(path_dirname)
 
-    self.writer = tf.python_io.TFRecordWriter(path + '.tfrecord')
+    self.writer = tf.python_io.TFRecordWriter(f'{path}.tfrecord')
 
   def close(self):
     if self.writer is None:

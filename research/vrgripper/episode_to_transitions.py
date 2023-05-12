@@ -86,10 +86,9 @@ def episode_to_transitions_reacher(episode_data, is_demo=False):
   transitions = []
   for i, transition in enumerate(episode_data):
     del i
-    feature_dict = {}
     (obs_t, action, reward, obs_tp1, done, debug) = transition
     del debug
-    feature_dict['pose_t'] = _float_feature(obs_t)
+    feature_dict = {'pose_t': _float_feature(obs_t)}
     feature_dict['pose_tp1'] = _float_feature(obs_tp1)
     feature_dict['action'] = _float_feature(action)
     feature_dict['reward'] = _float_feature([reward])
@@ -103,11 +102,11 @@ def episode_to_transitions_reacher(episode_data, is_demo=False):
 @gin.configurable
 def episode_to_transitions_metareacher(episode_data):
   """Converts metareacher env data to transition examples."""
-  context_features = {}
   feature_lists = collections.defaultdict(list)
 
-  context_features['is_demo'] = _int64_feature(
-      [int(episode_data[0][-1]['is_demo'])])
+  context_features = {
+      'is_demo': _int64_feature([int(episode_data[0][-1]['is_demo'])])
+  }
   context_features['target_idx'] = _int64_feature(
       [episode_data[0][-1]['target_idx']])
 
@@ -121,10 +120,10 @@ def episode_to_transitions_metareacher(episode_data):
     feature_lists['reward'].append(_float_feature([reward]))
     feature_lists['done'].append(_int64_feature([int(done)]))
 
-  tf_feature_lists = {}
-  for key in feature_lists:
-    tf_feature_lists[key] = tf.train.FeatureList(feature=feature_lists[key])
-
+  tf_feature_lists = {
+      key: tf.train.FeatureList(feature=feature_lists[key])
+      for key in feature_lists
+  }
   return [tf.train.SequenceExample(
       context=tf.train.Features(feature=context_features),
       feature_lists=tf.train.FeatureLists(feature_list=tf_feature_lists))]

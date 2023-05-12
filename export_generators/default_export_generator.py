@@ -110,8 +110,7 @@ class DefaultExportGenerator(abstract_export_generator.AbstractExportGenerator):
       flat_feature_spec = tensorspec_utils.flatten_spec_structure(feature_spec)
       required_feature_spec = (
           tensorspec_utils.filter_required_flat_tensor_spec(flat_feature_spec))
-      dataset_keys = set(
-          [t.dataset_key for t in required_feature_spec.values()])
+      dataset_keys = {t.dataset_key for t in required_feature_spec.values()}
       receiver_tensors = {}
       parse_tensors = {}
       for dataset_key in dataset_keys:

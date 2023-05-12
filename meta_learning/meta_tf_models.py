@@ -86,8 +86,9 @@ def _create_meta_spec(
     meta learning tensor_spec with .train and .val access.
   """
   if spec_type not in ['features', 'labels']:
-    raise ValueError('We only support spec_type "features" or "labels" '
-                     'but received {}.'.format(spec_type))
+    raise ValueError(
+        f'We only support spec_type "features" or "labels" but received {spec_type}.'
+    )
   train_tensor_spec = utils.flatten_spec_structure(
       utils.copy_tensorspec(
           tensor_spec, batch_size=num_train_samples_per_task, prefix='train'))
@@ -107,11 +108,10 @@ def _create_meta_spec(
   for key, value in val_tensor_spec.items():
     val_tensor_spec[key] = utils.ExtendedTensorSpec.from_spec(
         value, is_optional=False)
-  val_mode_shape = (1,)
-  if num_train_samples_per_task is None:
-    val_mode_shape = ()
-  val_mode = TensorSpec(
-      shape=val_mode_shape, dtype=tf.bool, name='val_mode/{}'.format(spec_type))
+  val_mode_shape = () if num_train_samples_per_task is None else (1, )
+  val_mode = TensorSpec(shape=val_mode_shape,
+                        dtype=tf.bool,
+                        name=f'val_mode/{spec_type}')
   return utils.flatten_spec_structure(
       TrainValPair(
           train=train_tensor_spec, val=val_tensor_spec, val_mode=val_mode))

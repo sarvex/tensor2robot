@@ -38,9 +38,8 @@ def episode_to_transitions_pose_toy(episode_data):
     (obs_t, action, reward, obs_tp1, done, debug) = transition
     del obs_tp1
     del done
-    features = {}
     obs_t = Image.fromarray(obs_t)
-    features['state/image'] = _bytes_feature([image.jpeg_string(obs_t)])
+    features = {'state/image': _bytes_feature([image.jpeg_string(obs_t)])}
     features['pose'] = _float_feature(action.flatten().tolist())
     features['reward'] = _float_feature([reward])
     features['target_pose'] = _float_feature(debug['target_pose'].tolist())

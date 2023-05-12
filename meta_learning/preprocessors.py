@@ -305,7 +305,7 @@ def create_metaexample_spec(
     for i in range(num_samples_per_task):
       spec = model_spec[key]
       name_prefix = '{:s}_ep{:d}'.format(prefix, i)
-      new_name = name_prefix + '/' + six.ensure_str(spec.name)
+      new_name = f'{name_prefix}/{six.ensure_str(spec.name)}'
       meta_example_spec[key + '/{:}'.format(i)] = (
           utils.ExtendedTensorSpec.from_spec(
               spec, name=new_name))
@@ -328,11 +328,12 @@ def stack_intra_task_episodes(
   """
   out_tensors = TSpecStructure()
   # Strip the "/i" postfix from all keys, then get the set of unique keys.
-  key_set = set(['/'.join(key.split('/')[:-1]) for key in in_tensors.keys()])
+  key_set = {'/'.join(key.split('/')[:-1]) for key in in_tensors.keys()}
   for key in key_set:
-    data = []
-    for i in range(num_samples_per_task):
-      data.append(in_tensors['{:s}/{:d}'.format(key, i)])
+    data = [
+        in_tensors['{:s}/{:d}'.format(key, i)]
+        for i in range(num_samples_per_task)
+    ]
     out_tensors[key] = tf.stack(data, axis=1)
   return out_tensors
 

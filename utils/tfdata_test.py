@@ -47,9 +47,8 @@ class TFDataTest(parameterized.TestCase, tf.test.TestCase):
                                 fake_filename_prefix,
                                 file_id='*',
                                 fake_file_type='*'):
-    return os.path.join(
-        FLAGS.test_tmpdir, '{}_{}.{}'.format(fake_filename_prefix, file_id,
-                                             fake_file_type))
+    return os.path.join(FLAGS.test_tmpdir,
+                        f'{fake_filename_prefix}_{file_id}.{fake_file_type}')
 
   def _create_fake_files(self, fake_filename_prefix, fake_file_type):
     ref_file_paths = []
@@ -408,7 +407,7 @@ class TFDataTest(parameterized.TestCase, tf.test.TestCase):
 
     # Test the ability to strip the filetype prefix.
     data_format, filenames = tfdata.get_data_format_and_filenames(
-        '{}:{}'.format(ref_data_format, file_pattern_sstables))
+        f'{ref_data_format}:{file_pattern_sstables}')
     self.assertAllEqual(sorted(filenames), sorted(ref_file_paths))
     self.assertEqual(data_format, ref_data_format)
 

@@ -261,12 +261,12 @@ class VRGripperRegressionModel(regression_model.RegressionModel):
         action, _ = vision_layers.BuildImageFeaturesToPoseModel(
             fc_input, num_outputs=self._action_size)
         action = self._output_mean + self._output_stddev * action
-    outputs.update({
+    outputs |= {
         'inference_output': action,
         'image': features.image,
         'feature_points': feature_points,
-        'softmax': end_points['softmax']
-    })
+        'softmax': end_points['softmax'],
+    }
     return outputs
 
   def a_func(self,
@@ -310,16 +310,15 @@ class VRGripperRegressionModel(regression_model.RegressionModel):
     """This implements outer loss and configurable inner losses."""
     if params and params.get('is_outer_loss', False):
       pass
-    if self._num_mixture_components > 1:
-      gm = mdn.get_mixture_distribution(
-          inference_outputs['dist_params'], self._num_mixture_components,
-          self._action_size,
-          self._output_mean if self._normalize_outputs else None)
-      return -tf.reduce_mean(gm.log_prob(labels.action))
-    else:
+    if self._num_mixture_components <= 1:
       return self._outer_loss_multiplier * tf.losses.mean_squared_error(
           labels=labels.action,
           predictions=inference_outputs['inference_output'])
+    gm = mdn.get_mixture_distribution(
+        inference_outputs['dist_params'], self._num_mixture_components,
+        self._action_size,
+        self._output_mean if self._normalize_outputs else None)
+    return -tf.reduce_mean(gm.log_prob(labels.action))
 
 
 @gin.configurable

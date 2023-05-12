@@ -103,8 +103,7 @@ def BuildImagesToFeaturesModel(images,
     # I bet there's a better way to assert this.
     film_shape = film_output_params.get_shape().as_list()
     if len(film_shape) != 2:
-      raise ValueError('FILM shape is %s but is expected to be 2-D' %
-                       str(film_shape))
+      raise ValueError(f'FILM shape is {str(film_shape)} but is expected to be 2-D')
     if film_shape[-1] != expected_size:
       raise ValueError('FILM shape is %s but final dimension should be %d' %
                        (str(film_shape), expected_size))
@@ -122,18 +121,14 @@ def BuildImagesToFeaturesModel(images,
 
   with slim.arg_scope([slim.conv2d], padding='VALID'):
     with slim.arg_scope(
-        [slim.conv2d],
-        weights_initializer=slim.xavier_initializer(),
-        weights_regularizer=slim.l2_regularizer(weight_regularization),
-        biases_initializer=tf.constant_initializer(0.01),
-        normalizer_fn=normalizer_fn,
-        normalizer_params=normalizer_params):
+            [slim.conv2d],
+            weights_initializer=slim.xavier_initializer(),
+            weights_regularizer=slim.l2_regularizer(weight_regularization),
+            biases_initializer=tf.constant_initializer(0.01),
+            normalizer_fn=normalizer_fn,
+            normalizer_params=normalizer_params):
       for i in range(num_blocks):
-        if i == 0 or i == 1:
-          stride = 2
-        else:
-          stride = 1
-
+        stride = 2 if i in [0, 1] else 1
         # Conv -> BN -> FILM -> ReLU.
         net = slim.conv2d(
             net,
@@ -152,11 +147,10 @@ def BuildImagesToFeaturesModel(images,
           num_output_maps, [1, 1],
           scope='final_conv_1x1',
           normalizer_params=batch_norm_params_with_scaling)
-      if use_spatial_softmax:
-        net, softmax = spatial_softmax.BuildSpatialSoftmax(net)
-        return net, {'softmax': softmax}
-      else:
+      if not use_spatial_softmax:
         return net, {}
+      net, softmax = spatial_softmax.BuildSpatialSoftmax(net)
+      return net, {'softmax': softmax}
 
 
 @gin.configurable

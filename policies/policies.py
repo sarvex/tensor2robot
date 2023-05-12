@@ -77,9 +77,7 @@ class Policy(six.with_metaclass(abc.ABCMeta, object)):
   @property
   def global_step(self):
     """The global step the model was saved with."""
-    if self._predictor is not None:
-      return self._predictor.global_step
-    return 0
+    return self._predictor.global_step if self._predictor is not None else 0
 
   def sample_action(self, obs, explore_prob):
     """Selects action for stepping from `dql_grasping:run_env` framework.

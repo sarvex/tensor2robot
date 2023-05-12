@@ -176,8 +176,10 @@ class TPUT2RModelWrapper(model_interface.ModelInterface):
     # Note, despite casting the benefit of bfloat16 are still maintained
     # for TPUs since this operation is a noop on this platform.
     # See http://shortn/_TTg3ZyATRo for rationale.
-    if not self._train_in_bfloat16 or (mode == tf.estimator.ModeKeys.PREDICT or
-                                       mode == tf.estimator.ModeKeys.EVAL):
+    if not self._train_in_bfloat16 or mode in [
+        tf.estimator.ModeKeys.PREDICT,
+        tf.estimator.ModeKeys.EVAL,
+    ]:
       features = tensorspec_utils.cast_bfloat16_to_float32(features)
       if labels is not None:
         labels = tensorspec_utils.cast_bfloat16_to_float32(labels)

@@ -35,8 +35,7 @@ class ResnetTest(tf.test.TestCase, parameterized.TestCase):
                                        return_intermediate_values=True)
     tensors = ['initial_conv', 'initial_max_pool', 'pre_final_pool',
                'final_reduce_mean', 'final_dense']
-    tensors += [
-        'block_layer{}'.format(i + 1) for i in range(4)]
+    tensors += [f'block_layer{i + 1}' for i in range(4)]
     self.assertEqual(set(tensors), set(end_points.keys()))
 
   @parameterized.parameters(

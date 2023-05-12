@@ -66,13 +66,10 @@ def fixed_padding(inputs, kernel_size, data_format):
   pad_beg = pad_total // 2
   pad_end = pad_total - pad_beg
 
-  if data_format == 'channels_first':
-    padded_inputs = tf.pad(inputs, [[0, 0], [0, 0],
-                                    [pad_beg, pad_end], [pad_beg, pad_end]])
-  else:
-    padded_inputs = tf.pad(inputs, [[0, 0], [pad_beg, pad_end],
-                                    [pad_beg, pad_end], [0, 0]])
-  return padded_inputs
+  return (
+      tf.pad(inputs, [[0, 0], [0, 0], [pad_beg, pad_end], [pad_beg, pad_end]])
+      if data_format == 'channels_first' else tf.pad(
+          inputs, [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]]))
 
 
 def conv2d_fixed_padding(inputs, filters, kernel_size, strides, data_format):
@@ -385,18 +382,11 @@ class Model(object):
 
     self.bottleneck = bottleneck
     if bottleneck:
-      if version == 1:
-        self.block_fn = _bottleneck_block_v1
-      else:
-        self.block_fn = _bottleneck_block_v2
+      self.block_fn = _bottleneck_block_v1 if version == 1 else _bottleneck_block_v2
     else:
-      if version == 1:
-        self.block_fn = _building_block_v1
-      else:
-        self.block_fn = _building_block_v2
-
+      self.block_fn = _building_block_v1 if version == 1 else _building_block_v2
     if dtype not in ALLOWED_TYPES:
-      raise ValueError('dtype must be one of: {}'.format(ALLOWED_TYPES))
+      raise ValueError(f'dtype must be one of: {ALLOWED_TYPES}')
 
     self.data_format = data_format
     self.num_classes = num_classes
@@ -444,11 +434,10 @@ class Model(object):
       A variable which is cast to fp16 if necessary.
     """
 
-    if dtype in CASTABLE_TYPES:
-      var = getter(name, shape, tf.float32, *args, **kwargs)
-      return tf.cast(var, dtype=dtype, name=six.ensure_str(name) + '_cast')
-    else:
+    if dtype not in CASTABLE_TYPES:
       return getter(name, shape, dtype, *args, **kwargs)
+    var = getter(name, shape, tf.float32, *args, **kwargs)
+    return tf.cast(var, dtype=dtype, name=f'{six.ensure_str(name)}_cast')
 
   def _model_variable_scope(self):
     """Returns a variable scope that the model should be created under.
@@ -495,10 +484,16 @@ class Model(object):
       for i, num_blocks in enumerate(self.block_sizes):
         num_filters = self.num_filters * (2**i)
         inputs = block_layer(
-            inputs=inputs, filters=num_filters, bottleneck=self.bottleneck,
-            block_fn=self.block_fn, blocks=num_blocks,
-            strides=self.block_strides[i], training=training,
-            name='block_layer{}'.format(i + 1), data_format=self.data_format)
+            inputs=inputs,
+            filters=num_filters,
+            bottleneck=self.bottleneck,
+            block_fn=self.block_fn,
+            blocks=num_blocks,
+            strides=self.block_strides[i],
+            training=training,
+            name=f'block_layer{i + 1}',
+            data_format=self.data_format,
+        )
 
       return inputs
 
@@ -531,8 +526,7 @@ def get_resnet_model(image, training):
       data_format='channels_last',
       dtype=DEFAULT_DTYPE,
   )
-  output = model(image, training)
-  return output
+  return model(image, training)
 
 
 def get_resnet50_spatial(images, is_training):

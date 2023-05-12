@@ -222,7 +222,7 @@ class VRGripperEnvSimpleTrialModel(abstract_model.AbstractT2RModel):
     # Map success labels [0, 1] -> [-1, 1]
     con_success = 2 * features.condition.labels.success - 1
     if self._retrial and con_full_state_pose.shape[1] != 2:
-      raise ValueError('Unexpected shape {}.'.format(con_full_state_pose.shape))
+      raise ValueError(f'Unexpected shape {con_full_state_pose.shape}.')
     if self._embed_type == 'temporal':
       fc_embedding = meta_tfdata.multi_batch_apply(
           tec.reduce_temporal_embeddings, 2,
@@ -231,7 +231,7 @@ class VRGripperEnvSimpleTrialModel(abstract_model.AbstractT2RModel):
     elif self._embed_type == 'mean':
       fc_embedding = con_full_state_pose[:, 0:1, -1:, :]
     else:
-      raise ValueError('Invalid embed_type: {}.'.format(self._embed_type))
+      raise ValueError(f'Invalid embed_type: {self._embed_type}.')
     fc_embedding = tf.tile(fc_embedding, [1, 1, 40, 1])
     if self._retrial:
       con_input = tf.concat([
@@ -277,9 +277,7 @@ class VRGripperEnvSimpleTrialModel(abstract_model.AbstractT2RModel):
             vision_layers.BuildImageFeaturesToPoseModel,
             3, fc_inputs, self._action_size)
 
-    outputs.update({
-        'inference_output': action,
-    })
+    outputs['inference_output'] = action
 
     return outputs
 
@@ -319,10 +317,10 @@ class VRGripperEnvSimpleTrialModel(abstract_model.AbstractT2RModel):
       params = None):
     """Log the streaming mean of any train outputs. See also base class."""
     if train_outputs is not None:
-      eval_outputs = {}
-      for key, value in train_outputs.items():
-        eval_outputs['mean_' + six.ensure_str(key)] = tf.metrics.mean(value)
-      return eval_outputs
+      return {
+          f'mean_{six.ensure_str(key)}': tf.metrics.mean(value)
+          for key, value in train_outputs.items()
+      }
 
   def get_run_config(self):
     return tf.estimator.RunConfig(
@@ -537,10 +535,10 @@ class VRGripperEnvVisionTrialModel(abstract_model.AbstractT2RModel):
       params = None):
     """Log the streaming mean of any train outputs. See also base class."""
     if train_outputs is not None:
-      eval_outputs = {}
-      for key, value in train_outputs.items():
-        eval_outputs['mean_' + six.ensure_str(key)] = tf.metrics.mean(value)
-      return eval_outputs
+      return {
+          f'mean_{six.ensure_str(key)}': tf.metrics.mean(value)
+          for key, value in train_outputs.items()
+      }
 
   def get_run_config(self):
     return tf.estimator.RunConfig(

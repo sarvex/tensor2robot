@@ -49,13 +49,13 @@ def create_exp_decaying_learning_rate(initial_learning_rate = 0.0001,
     learning_rate: Scaler tf.Tensor with the learning rate depending on the
       globat_step.
   """
-  learning_rate = tf.exponential_decay(
+  return tf.exponential_decay(
       learning_rate=initial_learning_rate,
       global_step=tf.get_or_create_global_step(),
       decay_steps=decay_steps,
       decay_rate=decay_rate,
-      staircase=staircase)
-  return learning_rate
+      staircase=staircase,
+  )
 
 
 @gin.configurable

@@ -235,8 +235,7 @@ def MatchNormsLoss(anchor_tensors, paired_tensors):
   paired_norms = tf.norm(paired_tensors, axis=1)
   tf.summary.histogram('norms_difference', tf.nn.l2_loss(anchor_norms
                                                          -paired_norms))
-  loss = tf.reduce_mean(tf.nn.l2_loss(anchor_norms-paired_norms))
-  return loss
+  return tf.reduce_mean(tf.nn.l2_loss(anchor_norms-paired_norms))
 
 
 def _GetSoftMaxResponse(goal_embedding, scene_spatial):

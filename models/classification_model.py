@@ -149,9 +149,9 @@ class ClassificationModel(abstract_model.AbstractT2RModel):
       raise ValueError('The output of a_func is expected to be a dict.')
 
     if 'a_predicted' not in outputs:
-      raise ValueError('For classification models a_predicted is a required '
-                       'key in outputs but is not in {}.'.format(
-                           list(outputs.keys())))
+      raise ValueError(
+          f'For classification models a_predicted is a required key in outputs but is not in {list(outputs.keys())}.'
+      )
 
     if self.use_summaries(params):
       tf.summary.histogram('a_t_predicted', outputs['a_predicted'])
@@ -166,8 +166,7 @@ class ClassificationModel(abstract_model.AbstractT2RModel):
                      params = None):
     """See base class."""
     del features, mode, config, params
-    loss = self.loss_fn(labels, inference_outputs)
-    return loss
+    return self.loss_fn(labels, inference_outputs)
 
   def create_export_outputs_fn(self,
                                features,
@@ -177,8 +176,7 @@ class ClassificationModel(abstract_model.AbstractT2RModel):
                                params = None):
     """See base class."""
     del features, mode, config, params
-    predictions = {'prediction': inference_outputs['a_predicted']}
-    return predictions
+    return {'prediction': inference_outputs['a_predicted']}
 
   def pack_state_to_feature_spec(self,
                                  state_params
@@ -192,8 +190,7 @@ class ClassificationModel(abstract_model.AbstractT2RModel):
       feature_spec: An instance of self.feature_spec_class. This contains
         features for the state.
     """
-    feature_spec = tensorspec_utils.TensorSpecStruct(state=state_params)
-    return feature_spec
+    return tensorspec_utils.TensorSpecStruct(state=state_params)
 
   def model_eval_fn(self,
                     features,
@@ -227,11 +224,9 @@ class ClassificationModel(abstract_model.AbstractT2RModel):
         predictions=predictions_rounded,
         name='eval_recall')
 
-    metric_fn = {
+    return {
         'eval_mse': eval_mse,
         'eval_precision': eval_precision,
         'eval_accuracy': eval_accuracy,
-        'eval_recall': eval_recall
+        'eval_recall': eval_recall,
     }
-
-    return metric_fn

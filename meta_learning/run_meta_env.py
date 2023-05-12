@@ -161,13 +161,11 @@ def run_meta_env(env,
               episode_to_transitions_fn(episode_data, is_demo=True))
 
       policy.adapt(copy.copy(condition_data))
-    # Unlike VRGripperEnv, HVGripperEnv directly retrieves demonstration data
-    # from a record-backed dataset and does not need a demo policy.
     elif hasattr(env, 'task_data') and hasattr(policy, 'adapt'):
       env_task_data = env.task_data
-      for episode_name, episode_data in env_task_data.items():
-        if six.ensure_str(episode_name).startswith('condition_ep'):
-          condition_data.append(episode_data)
+      condition_data.extend(
+          episode_data for episode_name, episode_data in env_task_data.items()
+          if six.ensure_str(episode_name).startswith('condition_ep'))
       policy.adapt(copy.copy(condition_data))
 
     for step_num in range(num_adaptations_per_task):
@@ -178,16 +176,13 @@ def run_meta_env(env,
         done, env_step, episode_reward, episode_data = (False, 0, 0.0, [])
         policy.reset()
         obs = env.reset()
-        if explore_schedule:
-          explore_prob = explore_schedule.value(global_step)
-        else:
-          explore_prob = 0
+        explore_prob = explore_schedule.value(global_step) if explore_schedule else 0
         # Run the episode.
         while not done:
           debug = {}
           action, policy_debug = policy.sample_action(obs, explore_prob)
           if policy_debug is not None:
-            debug.update(policy_debug)
+            debug |= policy_debug
           if policy_debug and 'q_predicted' in policy_debug:
             episode_q_values[env_step].append(policy_debug['q_predicted'])
           new_obs, rew, done, env_debug = env.step(action)
@@ -245,9 +240,10 @@ def run_meta_env(env,
             tag='%s/step_%d_improvement' % (tag, step_num),
             simple_value=delta))
 
-    for step, q_values in episode_q_values.items():
-      summary_values.append(tf.Summary.Value(tag='%s/Q/%d' % (tag, step),
-                                             simple_value=np.mean(q_values)))
+    summary_values.extend(
+        tf.Summary.Value(tag='%s/Q/%d' % (tag, step),
+                         simple_value=np.mean(q_values))
+        for step, q_values in episode_q_values.items())
     for task_family, step_rewards in task_family_step_rewards.items():
       # Reward on the last adaptation step.
       rewards = step_rewards[num_adaptations_per_task-1]

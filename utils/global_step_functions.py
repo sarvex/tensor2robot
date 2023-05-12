@@ -115,10 +115,10 @@ def exponential_decay(initial_value = 0.0001,
     value: Scalar tf.Tensor with the value decaying based on the global_step.
   """
   global_step = tf.train.get_or_create_global_step()
-  value = tf.compat.v1.train.exponential_decay(
+  return tf.compat.v1.train.exponential_decay(
       learning_rate=initial_value,
       global_step=global_step,
       decay_steps=decay_steps,
       decay_rate=decay_rate,
-      staircase=staircase)
-  return value
+      staircase=staircase,
+  )

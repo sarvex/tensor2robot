@@ -38,7 +38,7 @@ def convert(assets_filepath):
   t2r_assets = t2r_pb2.T2RAssets()
   input_spec_filepath = os.path.join(assets_filepath, 'input_specs.pkl')
   if not tf.io.gfile.exists(input_spec_filepath):
-    raise ValueError('No file exists for {}.'.format(input_spec_filepath))
+    raise ValueError(f'No file exists for {input_spec_filepath}.')
   feature_spec, label_spec = tensorspec_utils.load_input_spec_from_file(
       input_spec_filepath)
 

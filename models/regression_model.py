@@ -137,9 +137,9 @@ class RegressionModel(abstract_model.AbstractT2RModel):
       raise ValueError('The output of a_func is expected to be a dict.')
 
     if 'inference_output' not in outputs:
-      raise ValueError('For regression models inference_output is a required '
-                       'key in outputs but is not in {}.'.format(
-                           list(outputs.keys())))
+      raise ValueError(
+          f'For regression models inference_output is a required key in outputs but is not in {list(outputs.keys())}.'
+      )
     if self.use_summaries(params):
       tf.summary.histogram('inference_output', outputs['inference_output'])
     return outputs
@@ -153,8 +153,7 @@ class RegressionModel(abstract_model.AbstractT2RModel):
                      params = None):
     """See base class."""
     del features, config
-    loss = self.loss_fn(labels, inference_outputs, mode=mode, params=params)
-    return loss
+    return self.loss_fn(labels, inference_outputs, mode=mode, params=params)
 
   def create_export_outputs_fn(self,
                                features,

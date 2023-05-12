@@ -178,10 +178,7 @@ class MAMLModel(abstract_model.AbstractT2RModel):
             labels=labels_condition,
             mode=mode,
             params=params)
-        dtypes = {}
-        for key, value in infered_outputs.items():
-          dtypes[key] = value.dtype
-        return dtypes
+        return {key: value.dtype for key, value in infered_outputs.items()}
 
   def _map_task_learn(self, task_learn_fn, elems, mode, params=None):
     """Maps a task learning/adaptation function across a batch of tasks.
@@ -200,31 +197,30 @@ class MAMLModel(abstract_model.AbstractT2RModel):
 
     if self._use_parallel_for:
       return pfor_map_fn(task_learn_fn, elems)
-    else:
-      if params is None:
-        params = {}
-      params['is_inner_loop'] = True
-      dtypes = self.infer_base_model_output_dtypes(mode, params)
+    if params is None:
+      params = {}
+    params['is_inner_loop'] = True
+    dtypes = self.infer_base_model_output_dtypes(mode, params)
 
-      # We flatten the features to infer the batch_size for parallel iterations.
-      # The flattened TensorSpecStruct enables us to get the
-      # first element of condition without knowning the name.
-      parallel_iterations = list(utils.flatten_spec_structure(
-          elems).values())[0].get_shape().as_list()[0]
-      # Use parallel execution per batch, if we don't know the batch_size we
-      # use the standard.
-      if parallel_iterations is None:
-        parallel_iterations = 10
+    # We flatten the features to infer the batch_size for parallel iterations.
+    # The flattened TensorSpecStruct enables us to get the
+    # first element of condition without knowning the name.
+    parallel_iterations = list(utils.flatten_spec_structure(
+        elems).values())[0].get_shape().as_list()[0]
+    # Use parallel execution per batch, if we don't know the batch_size we
+    # use the standard.
+    if parallel_iterations is None:
+      parallel_iterations = 10
 
-      # The output for val, the inner loop training steps, and training loss.
-      dtype = ([dtypes] * 2, [dtypes] * (self._num_inner_loop_steps + 1),
-               [tf.float32] * (self._num_inner_loop_steps + 1))
+    # The output for val, the inner loop training steps, and training loss.
+    dtype = ([dtypes] * 2, [dtypes] * (self._num_inner_loop_steps + 1),
+             [tf.float32] * (self._num_inner_loop_steps + 1))
 
-      return tf.map_fn(
-          task_learn_fn,
-          elems=elems,
-          dtype=dtype,
-          parallel_iterations=parallel_iterations)
+    return tf.map_fn(
+        task_learn_fn,
+        elems=elems,
+        dtype=dtype,
+        parallel_iterations=parallel_iterations)
 
   def inference_network_fn(self,
                            features,
@@ -451,9 +447,8 @@ class MAMLModel(abstract_model.AbstractT2RModel):
         features.condition.labels)
     for inner_loop_step in range(self._num_inner_loop_steps + 1):
       condition_output_flat_batch = meta_tfdata.flatten_batch_examples(
-          inference_outputs['full_condition_outputs/output_{}'.format(
-              inner_loop_step)])
-      with tf.variable_scope('inner_loop_step_{}'.format(inner_loop_step)):
+          inference_outputs[f'full_condition_outputs/output_{inner_loop_step}'])
+      with tf.variable_scope(f'inner_loop_step_{inner_loop_step}'):
         self._base_model.add_summaries(
             features=condition_features_flat_batch,
             labels=condition_labels_flat_batch,

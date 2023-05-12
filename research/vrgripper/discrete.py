@@ -129,9 +129,8 @@ class DiscreteDecoder(object):
     self._action_logits = slim.fully_connected(
         params, output_size * self._num_bins, activation_fn=None,
         scope='action_logits')
-    predictions = GetDiscreteActions(
-        self._action_logits, output_size, self._num_bins, self._bin_centers)
-    return predictions
+    return GetDiscreteActions(self._action_logits, output_size, self._num_bins,
+                              self._bin_centers)
 
   def loss(self, labels):  # pylint: disable=invalid-name
     return GetDiscreteActionLoss(

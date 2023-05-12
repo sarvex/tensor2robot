@@ -82,8 +82,7 @@ def embed_condition_images(condition_image,
     ValueError if `condition_image` has incorrect rank.
   """
   if len(condition_image.shape) != 4:
-    raise ValueError('Image has unexpected shape {}.'.format(
-        condition_image.shape))
+    raise ValueError(f'Image has unexpected shape {condition_image.shape}.')
   with tf.variable_scope(scope, reuse=reuse, use_resource=True):
     image_embedding, _ = vision_layers.BuildImagesToFeaturesModel(
         condition_image, use_spatial_softmax=use_spatial_softmax)
@@ -140,8 +139,8 @@ def reduce_temporal_embeddings(
   if len(temporal_embedding.shape) == 5:
     temporal_embedding = tf.reduce_mean(temporal_embedding, axis=[2, 3])
   if len(temporal_embedding.shape) != 3:
-    raise ValueError('Temporal embedding has unexpected shape {}.'.format(
-        temporal_embedding.shape))
+    raise ValueError(
+        f'Temporal embedding has unexpected shape {temporal_embedding.shape}.')
   embedding = temporal_embedding
   with tf.variable_scope(scope, reuse=reuse, use_resource=True):
     if 'temporal_conv' not in combine_mode:
@@ -194,14 +193,12 @@ def compute_embedding_contrastive_loss(
     each of the `num_tasks` con_embeddings.
   """
   if len(inf_embedding.shape) != 3:
-    raise ValueError('Unexpected inf_embedding shape: {}.'.format(
-        inf_embedding.shape))
+    raise ValueError(f'Unexpected inf_embedding shape: {inf_embedding.shape}.')
   if len(con_embedding.shape) != 3:
-    raise ValueError('Unexpected con_embedding shape: {}.'.format(
-        con_embedding.shape))
+    raise ValueError(f'Unexpected con_embedding shape: {con_embedding.shape}.')
   avg_inf_embedding = tf.reduce_mean(inf_embedding, axis=1)
   avg_con_embedding = tf.reduce_mean(con_embedding, axis=1)
-  anchor = avg_inf_embedding[0:1]
+  anchor = avg_inf_embedding[:1]
   if positives is not None:
     labels = positives
   else:
@@ -218,13 +215,13 @@ def compute_embedding_contrastive_loss(
     # Seems to perform best.
     embed_loss1 = slim_losses.metric_learning.contrastive_loss(
         labels, anchor, avg_con_embedding)
-    anchor_cond = avg_con_embedding[0:1]
+    anchor_cond = avg_con_embedding[:1]
     embed_loss2 = slim_losses.metric_learning.contrastive_loss(
         labels, anchor_cond, avg_inf_embedding)
     embed_loss = embed_loss1 + embed_loss2
   elif contrastive_loss_mode == 'reverse_direction':
     # anchor_con --> inf embeddings.
-    anchor_cond = avg_con_embedding[0:1]
+    anchor_cond = avg_con_embedding[:1]
     embed_loss = slim_losses.metric_learning.contrastive_loss(
         labels, anchor_cond, avg_inf_embedding)
   elif contrastive_loss_mode == 'cross_entropy':
@@ -235,7 +232,7 @@ def compute_embedding_contrastive_loss(
     #
     # Performance untested.
     temperature = 2
-    anchor_cond = avg_con_embedding[0:1]
+    anchor_cond = avg_con_embedding[:1]
     cosine_sim = tf.reduce_sum(anchor * avg_con_embedding, axis=1)
     loss1 = tf.keras.losses.binary_crossentropy(
         labels, temperature * cosine_sim, from_logits=True)

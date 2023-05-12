@@ -175,9 +175,7 @@ class ExportedSavedModelPredictor(abstract_predictor.AbstractPredictor):
     """
     saved_model = os.path.join(export_dir, 'saved_model.pb')
     t2r_assets = os.path.join(export_dir, 'assets.extra', 't2r_assets.pbtxt')
-    if tf.io.gfile.exists(saved_model) and tf.io.gfile.exists(t2r_assets):
-      return True
-    return False
+    return bool(tf.io.gfile.exists(saved_model) and tf.io.gfile.exists(t2r_assets))
 
   def _restore(self):
     """Restores the model parameters from the latest available data.

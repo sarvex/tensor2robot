@@ -346,35 +346,39 @@ def create_default_exporters(
 
   exporters = []
   if use_numpy_exporters:
-    exporters.append(
+    exporters.extend((
         tf.estimator.BestExporter(
             name='best_exporter_numpy',
             compare_fn=compare_fn(),
-            serving_input_receiver_fn=export_generator
-            .create_serving_input_receiver_numpy_fn(),
-            assets_extra=assets))
-    exporters.append(
+            serving_input_receiver_fn=export_generator.
+            create_serving_input_receiver_numpy_fn(),
+            assets_extra=assets,
+        ),
         tf.estimator.LatestExporter(
             name='latest_exporter_numpy',
-            serving_input_receiver_fn=export_generator
-            .create_serving_input_receiver_numpy_fn(),
+            serving_input_receiver_fn=export_generator.
+            create_serving_input_receiver_numpy_fn(),
             exports_to_keep=exports_to_keep,
-            assets_extra=assets))
+            assets_extra=assets,
+        ),
+    ))
   if use_tfexample_exporters:
-    exporters.append(
+    exporters.extend((
         tf.estimator.BestExporter(
             name='best_exporter_tf_example',
             compare_fn=compare_fn(),
-            serving_input_receiver_fn=export_generator
-            .create_serving_input_receiver_tf_example_fn(),
-            assets_extra=assets))
-    exporters.append(
+            serving_input_receiver_fn=export_generator.
+            create_serving_input_receiver_tf_example_fn(),
+            assets_extra=assets,
+        ),
         tf.estimator.LatestExporter(
             name='latest_exporter_tf_example',
-            serving_input_receiver_fn=export_generator
-            .create_serving_input_receiver_tf_example_fn(),
+            serving_input_receiver_fn=export_generator.
+            create_serving_input_receiver_tf_example_fn(),
             exports_to_keep=exports_to_keep,
-            assets_extra=assets))
+            assets_extra=assets,
+        ),
+    ))
   if use_servo_exporter:
     exporters.append(
         tf.estimator.LatestExporter(
@@ -637,7 +641,7 @@ def create_backup_checkpoint_for_eval(
   for attempt in range(max_num_copy_attempts):
     current_eval_checkpoint = os.path.join(
         os.path.dirname(checkpoint_path), backup_checkpoint_folder_name)
-    src_filenames = tf.io.gfile.glob(checkpoint_path + '*')
+    src_filenames = tf.io.gfile.glob(f'{checkpoint_path}*')
 
     # Since files are written concurrently, it is important to check if there
     # are tmp files in the filename which is by convention model..
@@ -651,7 +655,7 @@ def create_backup_checkpoint_for_eval(
         is_valid_checkpoint = False
 
     # A valid checkpoint path (version 2) contains a index file.
-    if not tf.io.gfile.exists(checkpoint_path + '.index'):
+    if not tf.io.gfile.exists(f'{checkpoint_path}.index'):
       is_valid_checkpoint = False
 
     if not is_valid_checkpoint:

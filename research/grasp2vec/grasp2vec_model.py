@@ -192,15 +192,14 @@ class Grasp2VecModel(abstract_model.AbstractT2RModel):
     pre_s, post_s = tf.split(s, 2, axis=0)
     goal_v, goal_s = networks.Embedding(
         features.goal_image, mode, params, scope='goal')
-    outputs = {
+    return {
         'pre_vector': pre_v,
         'post_vector': post_v,
         'pre_spatial': pre_s,
         'post_spatial': post_s,
         'goal_vector': goal_v,
-        'goal_spatial': goal_s
+        'goal_spatial': goal_s,
     }
-    return outputs
 
   def model_train_fn(self,
                      features,
@@ -230,9 +229,9 @@ class Grasp2VecModel(abstract_model.AbstractT2RModel):
     if not self.use_summaries(params):
       return
     for key in ['pregrasp', 'postgrasp', 'goal']:
-      feature_name = key + '_image'
+      feature_name = f'{key}_image'
       if feature_name in list(features.keys()):
-        tf.summary.image('image/%s' % key, features[feature_name])
+        tf.summary.image(f'image/{key}', features[feature_name])
     heatmaps = visualization.add_heatmap_summary(
         inference_outputs['goal_vector'], inference_outputs['pre_spatial'],
         'goal_pregrasp_map')

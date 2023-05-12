@@ -98,8 +98,7 @@ class MAMLInnerLoopGradientDescent(object):
     """Add parameter summaries for the MAML inner loop."""
     if self._learn_inner_lr:
       for name, var in self._lr_cache.items():
-        tf.summary.scalar('inner_loop_learning_rates/' + six.ensure_str(name),
-                          var)
+        tf.summary.scalar(f'inner_loop_learning_rates/{six.ensure_str(name)}', var)
     else:
       tf.summary.scalar('inner_loop_learning_rate',
                         tf.constant(self._learning_rate))

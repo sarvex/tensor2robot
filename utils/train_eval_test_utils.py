@@ -58,10 +58,10 @@ def assert_output_files(
     filenames_dir = tf.io.gfile.listdir(model_dir)
     tf.logging.info('filenames_dir: %s', filenames_dir)
     test_case.assertNotEmpty(
-        filenames, msg='No files found with pattern "%s"' % filename_pattern)
+        filenames, msg=f'No files found with pattern "{filename_pattern}"')
     for filename in filenames:
       with tf.io.gfile.GFile(filename) as f:
-        test_case.assertGreater(f.size(), 0, msg='%s is empty' % filename)
+        test_case.assertGreater(f.size(), 0, msg=f'{filename} is empty')
 
 
 

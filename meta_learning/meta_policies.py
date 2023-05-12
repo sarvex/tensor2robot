@@ -65,11 +65,7 @@ class MAMLCEMPolicy(MetaLearningPolicy, policies.CEMPolicy):
   def SelectAction(self, state, context, timestep):
 
     # TODO(T2R_CONTRIBUTORS)
-    if self._prev_episode_data:
-      prediction_key = 'val_output'
-    else:
-      prediction_key = 'train_output'
-
+    prediction_key = 'val_output' if self._prev_episode_data else 'train_output'
     def objective_fn(samples):
       """The CEM objective function.
 

@@ -41,11 +41,12 @@ def RandomCropImages(images, input_shape,
   """
   if len(input_shape) != 3:
     raise ValueError(
-        'The input shape has to be of the form (height, width, channels) '
-        'but has len {}'.format(len(input_shape)))
+        f'The input shape has to be of the form (height, width, channels) but has len {len(input_shape)}'
+    )
   if len(target_shape) != 2:
-    raise ValueError('The target shape has to be of the form (height, width) '
-                     'but has len {}'.format(len(target_shape)))
+    raise ValueError(
+        f'The target shape has to be of the form (height, width) but has len {len(target_shape)}'
+    )
   max_y = int(input_shape[0]) - int(target_shape[0])
   max_x = int(input_shape[1]) - int(target_shape[1])
   with tf.control_dependencies(
@@ -74,23 +75,23 @@ def CenterCropImages(images, input_shape,
   """
   if len(input_shape) != 3:
     raise ValueError(
-        'The input shape has to be of the form (height, width, channels) '
-        'but has len {}'.format(len(input_shape)))
+        f'The input shape has to be of the form (height, width, channels) but has len {len(input_shape)}'
+    )
   if len(target_shape) != 2:
-    raise ValueError('The target shape has to be of the form (height, width) '
-                     'but has len {}'.format(len(target_shape)))
+    raise ValueError(
+        f'The target shape has to be of the form (height, width) but has len {len(target_shape)}'
+    )
   if input_shape[0] == target_shape[0] and input_shape[1] == target_shape[1]:
-    return [image for image in images]
+    return list(images)
 
-  # Assert all images have the same shape.
-  assert_ops = []
-  for image in images:
-    assert_ops.append(
-        tf.assert_equal(
-            input_shape[:2],
-            tf.shape(image)[1:3],
-            message=('All images must have same width and height'
-                     'for CenterCropImages.')))
+  assert_ops = [
+      tf.assert_equal(
+          input_shape[:2],
+          tf.shape(image)[1:3],
+          message=('All images must have same width and height'
+                   'for CenterCropImages.'),
+      ) for image in images
+  ]
   offset_y = int(input_shape[0] - target_shape[0]) // 2
   offset_x = int(input_shape[1] - target_shape[1]) // 2
   with tf.control_dependencies(assert_ops):
@@ -117,30 +118,30 @@ def CustomCropImages(images, input_shape,
   """
   if len(input_shape) != 3:
     raise ValueError(
-        'The input shape has to be of the form (height, width, channels) '
-        'but has len {}'.format(len(input_shape)))
+        f'The input shape has to be of the form (height, width, channels) but has len {len(input_shape)}'
+    )
   if len(target_shape) != 2:
-    raise ValueError('The target shape has to be of the form (height, width) '
-                     'but has len {}'.format(len(target_shape)))
+    raise ValueError(
+        f'The target shape has to be of the form (height, width) but has len {len(target_shape)}'
+    )
   if len(images) != len(target_locations):
-    raise ValueError('There should be one target location per image. Found {} '
-                     'images for {} locations'.format(len(images),
-                                                      len(target_locations)))
+    raise ValueError(
+        f'There should be one target location per image. Found {len(images)} images for {len(target_locations)} locations'
+    )
   if input_shape[0] == target_shape[0] and input_shape[1] == target_shape[1]:
-    return [image for image in images]
+    return list(images)
   if input_shape[0] < target_shape[0] or input_shape[1] < target_shape[1]:
-    raise ValueError('The target shape {} is larger than the input image size '
-                     '{}'.format(target_shape, input_shape[:2]))
-  assert_ops = []
-  for image, target_location in zip(images, target_locations):
-    # Assert all images have the same shape.
-    assert_ops.append(
-        tf.assert_equal(
-            input_shape[:2],
-            tf.shape(image)[1:3],
-            message=('All images must have same width and height'
-                     'for CenterCropImages.')))
-
+    raise ValueError(
+        f'The target shape {target_shape} is larger than the input image size {input_shape[:2]}'
+    )
+  assert_ops = [
+      tf.assert_equal(
+          input_shape[:2],
+          tf.shape(image)[1:3],
+          message=('All images must have same width and height'
+                   'for CenterCropImages.'),
+      ) for image, target_location in zip(images, target_locations)
+  ]
   with tf.control_dependencies(assert_ops):
     crops = []
     for image, target_location in zip(images, target_locations):

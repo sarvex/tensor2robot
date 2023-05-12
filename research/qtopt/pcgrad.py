@@ -96,7 +96,7 @@ class PCGrad(tf.train.Optimizer):
                         grad_loss=None):
     if self._use_collection_losses:
       loss = tf.get_collection(PCGRAD_LOSSES_COLLECTION)
-    assert isinstance(loss, list), "The loss is not a list: %s" % type(loss)
+    assert isinstance(loss, list), f"The loss is not a list: {type(loss)}"
     random.shuffle(loss)
 
     # Get vars to do PCGrad on.
@@ -118,8 +118,7 @@ class PCGrad(tf.train.Optimizer):
           aggregation_method=aggregation_method,
           colocate_gradients_with_ops=colocate_gradients_with_ops,
           grad_loss=grad_loss)
-    grads_and_vars = pcgrad_grads_and_vars + other_grads_and_vars
-    return grads_and_vars
+    return pcgrad_grads_and_vars + other_grads_and_vars
 
   def _compute_projected_grads_per_variable(self, pcgrad_vars, loss):
     if not pcgrad_vars:
@@ -129,11 +128,10 @@ class PCGrad(tf.train.Optimizer):
     for task_loss in loss:
       original_pcgrad_grads_vars = self._optimizer.compute_gradients(
           task_loss, pcgrad_vars)
-      original_grads = []
-      for grad_var in original_pcgrad_grads_vars:
-        if grad_var[0] is None:
-          continue
-        original_grads.append(grad_var[0])
+      original_grads = [
+          grad_var[0] for grad_var in original_pcgrad_grads_vars
+          if grad_var[0] is not None
+      ]
       task_var_grads.append(original_grads)
     var_task_grads = np.transpose(task_var_grads)
 

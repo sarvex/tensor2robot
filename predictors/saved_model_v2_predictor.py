@@ -69,9 +69,7 @@ class SavedModelPredictorBase(abstract_predictor.AbstractPredictor):
     self.assert_is_loaded()
 
     def _maybe_expand_dims(f, spec):
-      if list(f.shape) == spec.shape.as_list():
-        return np.expand_dims(f, 0)
-      return f
+      return np.expand_dims(f, 0) if list(f.shape) == spec.shape.as_list() else f
 
     expanded_features = tf.nest.map_structure(_maybe_expand_dims, features,
                                               self.get_feature_specification())

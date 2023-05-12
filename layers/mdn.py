@@ -53,10 +53,7 @@ def get_mixture_distribution(
         'Params has unexpected shape {:d}.'.format(params.shape.as_list()[-1]))
   alphas = params[Ellipsis, :num_alphas]
   offset = num_alphas
-  batch_dims = []
-  # Strip None dimensions from list (for exporter placeholders).
-  for d in params.shape.as_list()[:-1]:
-    batch_dims.append(-1 if d is None else d)
+  batch_dims = [-1 if d is None else d for d in params.shape.as_list()[:-1]]
   mus_shape = batch_dims + [num_alphas, sample_size]
   mus = tf.reshape(params[Ellipsis, offset:offset+num_mus], mus_shape)
   offset += num_mus
@@ -67,9 +64,8 @@ def get_mixture_distribution(
   mix_dist = tfp.distributions.Categorical(logits=alphas)
   comp_dist = tfp.distributions.MultivariateNormalDiag(
       loc=mus, scale_diag=tf.nn.softplus(sigmas) + min_sigma)
-  gm = tfp.distributions.MixtureSameFamily(
-      mixture_distribution=mix_dist, components_distribution=comp_dist)
-  return gm
+  return tfp.distributions.MixtureSameFamily(mixture_distribution=mix_dist,
+                                             components_distribution=comp_dist)
 
 
 @gin.configurable
@@ -158,8 +154,7 @@ class MDNDecoder(object):
     # to a handler). We should fix this later.
     self._gm = get_mixture_distribution(
         dist_params, self._num_mixture_components, output_size)
-    action = gaussian_mixture_approximate_mode(self._gm)
-    return action
+    return gaussian_mixture_approximate_mode(self._gm)
 
   def loss(self, labels):
     nll_local = -self._gm.log_prob(labels.action)

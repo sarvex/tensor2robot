@@ -76,15 +76,13 @@ def fixed_padding(inputs, kernel_size, data_format):
   pad_beg = pad_total // 2
   pad_end = pad_total - pad_beg
 
-  if data_format == 'channels_first':
-    padded_inputs = tf.pad(tensor=inputs,
-                           paddings=[[0, 0], [0, 0], [pad_beg, pad_end],
-                                     [pad_beg, pad_end]])
-  else:
-    padded_inputs = tf.pad(tensor=inputs,
-                           paddings=[[0, 0], [pad_beg, pad_end],
-                                     [pad_beg, pad_end], [0, 0]])
-  return padded_inputs
+  return (tf.pad(
+      tensor=inputs,
+      paddings=[[0, 0], [0, 0], [pad_beg, pad_end], [pad_beg, pad_end]],
+  ) if data_format == 'channels_first' else tf.pad(
+      tensor=inputs,
+      paddings=[[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]],
+  ))
 
 
 def conv2d_fixed_padding(inputs, filters, kernel_size, strides, data_format,
@@ -443,18 +441,15 @@ class Model(object):
 
     self.bottleneck = bottleneck
     if bottleneck:
-      if resnet_version == 1:
-        self.block_fn = _bottleneck_block_v1
-      else:
-        self.block_fn = _bottleneck_block_v2
+      self.block_fn = (_bottleneck_block_v1
+                       if resnet_version == 1 else _bottleneck_block_v2)
+    elif resnet_version == 1:
+      self.block_fn = _building_block_v1
     else:
-      if resnet_version == 1:
-        self.block_fn = _building_block_v1
-      else:
-        self.block_fn = _building_block_v2
+      self.block_fn = _building_block_v2
 
     if dtype not in ALLOWED_TYPES:
-      raise ValueError('dtype must be one of: {}'.format(ALLOWED_TYPES))
+      raise ValueError(f'dtype must be one of: {ALLOWED_TYPES}')
 
     self.data_format = data_format
     self.num_classes = num_classes
@@ -504,11 +499,10 @@ class Model(object):
       A variable which is cast to fp16 if necessary.
     """
 
-    if dtype in CASTABLE_TYPES:
-      var = getter(name, shape, tf.float32, *args, **kwargs)
-      return tf.cast(var, dtype=dtype, name=name + '_cast')
-    else:
+    if dtype not in CASTABLE_TYPES:
       return getter(name, shape, dtype, *args, **kwargs)
+    var = getter(name, shape, tf.float32, *args, **kwargs)
+    return tf.cast(var, dtype=dtype, name=f'{name}_cast')
 
   def _model_variable_scope(self):
     """Returns a variable scope that the model should be created under.
@@ -588,26 +582,31 @@ class Model(object):
           continue
         if len(film_gamma_betas[i]) != num_blocks:
           raise ValueError(
-              'Got {} FiLM vectors for block {}, expected {}'.format(
-                  len(film_gamma_betas[i]), i, num_blocks))
+              f'Got {len(film_gamma_betas[i])} FiLM vectors for block {i}, expected {num_blocks}'
+          )
         for film_gamma_beta in film_gamma_betas[i]:
           if film_gamma_beta is None:
             continue
           film_shape = film_gamma_beta.get_shape().as_list()
           if len(film_shape) != 2:
-            raise ValueError('FILM shape is %s but is expected to be 2-D' %
-                             str(film_shape))
+            raise ValueError(f'FILM shape is {str(film_shape)} but is expected to be 2-D')
           if film_shape[-1] != 2*num_filters:
             raise ValueError(
                 'FILM shape is %s but final dimension should be %d' %
                 (str(film_shape), 2*num_filters))
         inputs = block_layer(
-            inputs=inputs, filters=num_filters, bottleneck=self.bottleneck,
-            block_fn=self.block_fn, blocks=num_blocks,
-            strides=self.block_strides[i], training=training,
-            name='block_layer{}'.format(i + 1), data_format=self.data_format,
+            inputs=inputs,
+            filters=num_filters,
+            bottleneck=self.bottleneck,
+            block_fn=self.block_fn,
+            blocks=num_blocks,
+            strides=self.block_strides[i],
+            training=training,
+            name=f'block_layer{i + 1}',
+            data_format=self.data_format,
             weight_decay=self.weight_decay,
-            film_gamma_betas=film_gamma_betas[i])
+            film_gamma_betas=film_gamma_betas[i],
+        )
 
       # Only apply the BN and ReLU for model that does pre_activation in each
       # building/bottleneck block, eg resnet V2.

@@ -131,13 +131,13 @@ class T2RModelFixture(object):
     return None
 
   def _get_params(self, model_dir, **params):
-    default_params = dict(
+    return (dict(
         batch_size=_BATCH_SIZE,
         max_train_steps=_MAX_TRAIN_STEPS,
         use_tpu_wrapper=_USE_TPU_WRAPPER,
-        model_dir=model_dir)
-    default_params.update(params)
-    return default_params
+        model_dir=model_dir,
+    )
+            | params)
 
   def train_and_check_golden_predictions(self,
                                          module_name,
@@ -176,10 +176,7 @@ class T2RModelFixture(object):
             golden_dir, os.path.basename(filename)))
     else:
       # load from python2-generated data.
-      if python2_data:
-        encoding = 'latin1'
-      else:
-        encoding = 'ASCII'
+      encoding = 'latin1' if python2_data else 'ASCII'
       golden_data_arr = np.load(
           golden_data_filename, allow_pickle=True, encoding=encoding)
       # For every value in the golden data, make sure that the model has not

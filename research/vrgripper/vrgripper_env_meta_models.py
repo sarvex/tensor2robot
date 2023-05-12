@@ -280,11 +280,7 @@ class VRGripperEnvTecModel(abstract_model.AbstractT2RModel):
     else:
       fc_inputs = tf.concat([state_features, gripper_pose, fc_embedding], -1)
 
-    outputs = {}
-    aux_output_dim = 0
-    # We only predict end token for next step.
-    if self._predict_end_weight > 0:
-      aux_output_dim = 1
+    aux_output_dim = 1 if self._predict_end_weight > 0 else 0
     with tf.variable_scope('a_func', reuse=tf.AUTO_REUSE, use_resource=True):
       action_params, end_token = meta_tfdata.multi_batch_apply(
           vision_layers.BuildImageFeaturesToPoseModel,
@@ -293,11 +289,10 @@ class VRGripperEnvTecModel(abstract_model.AbstractT2RModel):
           params=action_params,
           output_size=self._num_waypoints*self._action_size)
 
-    outputs.update({
+    outputs = {} | {
         'inference_output': action,  # used for policy.
         'condition_embedding': condition_embedding,
-    })
-
+    }
     if self._predict_end_weight > 0:
       outputs['end_token_logits'] = end_token
       outputs['end_token'] = tf.nn.sigmoid(end_token)
@@ -360,10 +355,7 @@ class VRGripperEnvTecModel(abstract_model.AbstractT2RModel):
       params = None):
     """Log the streaming mean of any train outputs. See also base class."""
     if self.use_summaries(params) and train_outputs is not None:
-      eval_outputs = {}
-      for key, value in train_outputs.items():
-        eval_outputs[key] = tf.metrics.mean(value)
-      return eval_outputs
+      return {key: tf.metrics.mean(value) for key, value in train_outputs.items()}
 
   def add_summaries(self,
                     features,
@@ -385,7 +377,7 @@ class VRGripperEnvTecModel(abstract_model.AbstractT2RModel):
     pose = inference_outputs['inference_output']
     for i, key in enumerate(
         ['x', 'y', 'z', 'rx', 'ry', 'rz', 'gripper_close']):
-      tf.summary.histogram('estimated_pose/%s' % key, pose[Ellipsis, i])
+      tf.summary.histogram(f'estimated_pose/{key}', pose[Ellipsis, i])
     if self._predict_end_weight > 0:
       tf.summary.histogram('estimated_pose/end_weight', pose[Ellipsis, -1])
 

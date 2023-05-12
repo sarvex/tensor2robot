@@ -78,9 +78,9 @@ def infer_data_format(file_patterns):
   for key in DATA_FORMAT:
     if key in file_patterns:
       if data_format is not None:
-        raise ValueError('More than one data_format {} and {} have '
-                         'been found in {}.'.format(key, data_format,
-                                                    file_patterns))
+        raise ValueError(
+            f'More than one data_format {key} and {data_format} have been found in {file_patterns}.'
+        )
       data_format = key
 
   if data_format is None:
@@ -106,14 +106,13 @@ def get_data_format_and_filenames_list(
     comma-separated file patterns.
   """
   data_format = infer_data_format(file_patterns)
-  file_patterns = file_patterns.replace('{}:'.format(data_format), '')
+  file_patterns = file_patterns.replace(f'{data_format}:', '')
   filenames_list = [
       tf.io.gfile.glob(pattern) for pattern in file_patterns.split(',')
   ]
   for filenames in filenames_list:
     if not filenames:
-      raise ValueError(
-          'File list for some pattern in {} is empty'.format(file_patterns))
+      raise ValueError(f'File list for some pattern in {file_patterns} is empty')
   return data_format, filenames_list
 
 
@@ -262,11 +261,10 @@ def _get_sstable_proto_dict(*input_values):
         _, dict_extracted[key] = serialized_proto
       else:
         dict_extracted[key] = serialized_proto
+  elif len(input_values) == 2:
+    _, dict_extracted[''] = input_values
   else:
-    if len(input_values) == 2:
-      _, dict_extracted[''] = input_values
-    else:
-      dict_extracted[''], = input_values
+    dict_extracted[''], = input_values
   return dict_extracted
 
 
@@ -371,8 +369,8 @@ def create_parse_tf_example_fn(feature_tspec, label_tspec=None,
         # Filter out '_length' context features; don't parse them from records.
         for parse_name in sequence_features:
           # Sometimes, the '_length' context feature doesn't exist.
-          if parse_name + '_length' in context_features:
-            del context_features[parse_name + '_length']
+          if f'{parse_name}_length' in context_features:
+            del context_features[f'{parse_name}_length']
         result, sequence_result, feature_lengths = tf.io.parse_sequence_example(
             example,
             context_features=context_features,
@@ -380,7 +378,7 @@ def create_parse_tf_example_fn(feature_tspec, label_tspec=None,
         result.update(sequence_result)
         # Augment the parsed tensors with feature length tensors.
         for parse_name, length_tensor in feature_lengths.items():
-          result[parse_name + '_length'] = length_tensor
+          result[f'{parse_name}_length'] = length_tensor
       else:
         result = tf.parse_example(example, context_features)
       to_convert = [

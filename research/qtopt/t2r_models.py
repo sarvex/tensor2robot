@@ -372,9 +372,7 @@ class Grasping44E2EOpenCloseTerminateGripperStatusHeightToBottom(
              goal_vector_fn=None,
              goal_spatial_fn=None):
     base_model = self.create_legacy_model()
-    concat_axis = 1
-    if mode == PREDICT and self._tile_actions_for_predict:
-      concat_axis = 2
+    concat_axis = 2 if mode == PREDICT and self._tile_actions_for_predict else 1
     images = [None, features.state.image]
     grasp_params = base_model.create_grasp_params_input(
         features.action.to_dict(), concat_axis)

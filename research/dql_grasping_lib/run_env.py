@@ -49,8 +49,7 @@ def encode_image_array_as_png_str(image):
 
 
 def _gym_env_reset(env):
-  obs = env.reset()
-  return obs
+  return env.reset()
 
 
 def _gym_env_step(env, action):
@@ -60,8 +59,7 @@ def _gym_env_step(env, action):
 
 
 def _tfagents_env_reset(env):
-  obs = env.reset().observation
-  return obs
+  return env.reset().observation
 
 
 def _tfagents_env_step(env, action):
@@ -177,8 +175,11 @@ def _run_env(env,
 
   if root_dir and replay_writer:
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    record_prefix = os.path.join(root_dir, 'policy_%s' % tag,
-                                 'gs%d_t%d_%s' % (global_step, task, timestamp))
+    record_prefix = os.path.join(
+        root_dir,
+        f'policy_{tag}',
+        'gs%d_t%d_%s' % (global_step, task, timestamp),
+    )
   if root_dir and task == 0:
     summary_dir = os.path.join(root_dir, 'live_eval_%d' % task)
     summary_writer = tf.summary.FileWriter(summary_dir)
@@ -190,10 +191,7 @@ def _run_env(env,
     done, env_step, episode_reward, episode_data = (False, 0, 0.0, [])
     policy.reset()
     obs = reset_fn(env)
-    if explore_schedule:
-      explore_prob = explore_schedule.value(global_step)
-    else:
-      explore_prob = 0
+    explore_prob = explore_schedule.value(global_step) if explore_schedule else 0
     while not done:
       action, policy_debug = policy.sample_action(obs, explore_prob)
       if unpack_action:
@@ -224,13 +222,12 @@ def _run_env(env,
 
   if root_dir and task == 0:
     summary_values = [
-        tf.Summary.Value(
-            tag='%s/episode_reward' % tag,
-            simple_value=np.mean(episode_rewards))
+        tf.Summary.Value(tag=f'{tag}/episode_reward',
+                         simple_value=np.mean(episode_rewards))
     ]
-    for step, q_values in episode_q_values.items():
-      summary_values.append(
-          tf.Summary.Value(
-              tag='%s/Q/%d' % (tag, step), simple_value=np.mean(q_values)))
+    summary_values.extend(
+        tf.Summary.Value(tag='%s/Q/%d' % (tag, step),
+                         simple_value=np.mean(q_values))
+        for step, q_values in episode_q_values.items())
     summary = tf.Summary(value=summary_values)
     summary_writer.add_summary(summary, global_step)

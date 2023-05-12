@@ -248,8 +248,9 @@ class TensorspecUtilsTest(parameterized.TestCase, tf.test.TestCase):
         list(new_field.keys()))
     self.assertEqual(
         list(flat_ordered_dict_with_attributes.keys()),
-        list(REFERENCE_FLAT_ORDERED_DICT.keys()) +
-        ['new_field/' + key for key in new_field.keys()])
+        (list(REFERENCE_FLAT_ORDERED_DICT.keys()) +
+         [f'new_field/{key}' for key in new_field.keys()]),
+    )
 
   def test_tensor_spec_struct_composing_with_namedtuple(self):
     # Test that we can combine namedtuple and TensorSpecStruct.

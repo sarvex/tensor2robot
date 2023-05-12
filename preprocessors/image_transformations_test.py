@@ -46,8 +46,7 @@ class ImageTransformationsTest(tf.test.TestCase, parameterized.TestCase):
     mesh_y = tf.expand_dims(mesh_y, 2)
     image = tf.concat([mesh_x, mesh_y, mesh_y], 2)
     image = tf.expand_dims(image, 0)
-    images = tf.tile(image, [batch_size, 1, 1, 1])
-    return images
+    return tf.tile(image, [batch_size, 1, 1, 1])
 
   def _CreateTestDepthImages(self, batch_size, height, width):
     """Creates a batch of test depth images of given size.
@@ -62,8 +61,7 @@ class ImageTransformationsTest(tf.test.TestCase, parameterized.TestCase):
         depth image, depth value are uniformly sampled from 0.25 ~ 0.5.
     """
     tensor_shape = [batch_size, height, width, 1]
-    depth_images = tf.random.uniform(tensor_shape, 0.25, 2.5)
-    return depth_images
+    return tf.random.uniform(tensor_shape, 0.25, 2.5)
 
   @parameterized.parameters(([20, 20],), ([32, 32],))
   def testRandomCrop(self, output_shape):
@@ -189,9 +187,7 @@ class ImageTransformationsTest(tf.test.TestCase, parameterized.TestCase):
       batch_size = 4
       images = self._CreateRampTestImages(batch_size, input_shape[0],
                                           input_shape[1])
-      tensor_list = []
-      for i in range(batch_size):
-        tensor_list.append(images[i])
+      tensor_list = [images[i] for i in range(batch_size)]
       distorted = image_transformations.ApplyPhotometricImageDistortions(
           tensor_list, random_noise_apply_probability=1.0)
       delta = tf.reduce_sum(tf.square(images - distorted))
@@ -229,10 +225,7 @@ class ImageTransformationsTest(tf.test.TestCase, parameterized.TestCase):
       images = self._CreateRampTestImages(batch_size, input_shape[0],
                                           input_shape[1])
       def custom_distortion_fn(image):
-        if color_value == 0:
-          return tf.zeros_like(image)
-        else:
-          return tf.ones_like(image)
+        return tf.zeros_like(image) if color_value == 0 else tf.ones_like(image)
 
       distorted = image_transformations.ApplyPhotometricImageDistortionsParallel(
           images,
@@ -257,9 +250,7 @@ class ImageTransformationsTest(tf.test.TestCase, parameterized.TestCase):
       batch_size = 4
       depth_images = self._CreateTestDepthImages(batch_size, input_shape[0],
                                                  input_shape[1])
-      tensor_list = []
-      for i in range(batch_size):
-        tensor_list.append(depth_images[i])
+      tensor_list = [depth_images[i] for i in range(batch_size)]
       distorted = image_transformations.ApplyDepthImageDistortions(
           tensor_list, random_noise_apply_probability=1.0)
       depth_delta = tf.reduce_sum(tf.square(depth_images - distorted))
@@ -316,9 +307,7 @@ class ImageTransformationsTest(tf.test.TestCase, parameterized.TestCase):
       batch_size = 4
       images = self._CreateRampTestImages(batch_size, input_shape[0],
                                           input_shape[1])
-      tensor_list = []
-      for i in range(batch_size):
-        tensor_list.append(images[i])
+      tensor_list = [images[i] for i in range(batch_size)]
       distorted_1 = image_transformations.ApplyPhotometricImageDistortions(
           tensor_list, random_noise_apply_probability=1.0)
       distorted_2 = image_transformations.ApplyPhotometricImageDistortions(

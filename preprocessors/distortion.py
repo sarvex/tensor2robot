@@ -111,13 +111,8 @@ def crop_image(img, mode, input_size=(512, 640), target_size=(472, 472)):
   input_shape = (input_height, input_width, 3)
   target_shape = target_size
 
-  if mode == tf.estimator.ModeKeys.TRAIN:
-    crops = image_transformations.RandomCropImages([img],
-                                                   input_shape=input_shape,
-                                                   target_shape=target_shape)[0]
-
-  else:
-    crops = image_transformations.CenterCropImages([img],
-                                                   input_shape=input_shape,
-                                                   target_shape=target_shape)[0]
-  return crops
+  return (image_transformations.RandomCropImages(
+      [img], input_shape=input_shape, target_shape=target_shape)[0]
+          if mode == tf.estimator.ModeKeys.TRAIN else
+          image_transformations.CenterCropImages(
+              [img], input_shape=input_shape, target_shape=target_shape)[0])

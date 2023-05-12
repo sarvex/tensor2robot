@@ -190,11 +190,8 @@ class LaggedCheckpointListener(CheckpointExportListener):
     if not self._current_model_dir:
       self._lagged_model_dir = self._copy_lagged_model(export_dir,
                                                        self._lagged_export_dir)
-    elif os.path.basename(self._current_model_dir) == os.path.basename(
-        self._lagged_model_dir):
-      # If the lagged model is up to date with the current model directory.
-      pass
-    else:
+    elif os.path.basename(self._current_model_dir) != os.path.basename(
+          self._lagged_model_dir):
       self._lagged_model_dir = self._copy_lagged_model(self._current_model_dir,
                                                        self._lagged_export_dir)
 

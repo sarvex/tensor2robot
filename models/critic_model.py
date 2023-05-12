@@ -218,8 +218,9 @@ class CriticModel(abstract_model.AbstractT2RModel):
       raise ValueError('The output of q_func is expected to be a dict.')
 
     if 'q_predicted' not in outputs:
-      raise ValueError('For critic models q_predicted is a required key in '
-                       'outputs but is not in {}.'.format(list(outputs.keys())))
+      raise ValueError(
+          f'For critic models q_predicted is a required key in outputs but is not in {list(outputs.keys())}.'
+      )
 
     if self.use_summaries(params):
       tf.summary.histogram('q_t_predicted', outputs['q_predicted'])
@@ -234,5 +235,4 @@ class CriticModel(abstract_model.AbstractT2RModel):
                      params = None):
     """See base class."""
     del mode, config, params
-    loss = self.loss_fn(features, labels, inference_outputs)
-    return loss
+    return self.loss_fn(features, labels, inference_outputs)

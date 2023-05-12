@@ -121,7 +121,7 @@ class FractionalRecordInputGenerator(DefaultRecordInputGenerator):
           self._file_patterns)
       n = int(file_fraction * len(filenames))
       filenames = filenames[:n]
-      self._file_patterns = '{}:{}'.format(data_format, ','.join(filenames))
+      self._file_patterns = f"{data_format}:{','.join(filenames)}"
 
 
 @gin.configurable
@@ -132,9 +132,7 @@ class MultiEvalRecordInputGenerator(DefaultRecordInputGenerator):
                eval_map = None,
                **parent_kwargs):
     super(MultiEvalRecordInputGenerator, self).__init__(**parent_kwargs)
-    # If multi_eval_name is set via TF_CONFIG_ENV variable, override dataset.
-    multi_eval_name = get_multi_eval_name()
-    if multi_eval_name:
+    if multi_eval_name := get_multi_eval_name():
       self._file_patterns = eval_map[multi_eval_name]
     else:
       raise ValueError('multi_eval_name not set in TF_CONFIG env variable')
@@ -269,17 +267,13 @@ class WeightedRecordInputGenerator(DefaultRecordInputGenerator):
     data_format, filenames_list = tfdata.get_data_format_and_filenames_list(
         self._file_patterns)
     datasets = []
-    if self._weights is not None:
-      if len(filenames_list) != len(self._weights):
-        raise ValueError(
-            'Weights need to be same length as number of filenames.')
+    if self._weights is not None and len(filenames_list) != len(self._weights):
+      raise ValueError(
+          'Weights need to be same length as number of filenames.')
     for filenames in filenames_list:
       filenames_dataset = tf.data.Dataset.list_files(
           filenames, shuffle=is_training)
-      if is_training:
-        cycle_length = min(self._parallel_shards, len(filenames))
-      else:
-        cycle_length = 1
+      cycle_length = min(self._parallel_shards, len(filenames)) if is_training else 1
       dataset = filenames_dataset.apply(
           tf.data.experimental.parallel_interleave(
               tfdata.DATA_FORMAT[data_format],

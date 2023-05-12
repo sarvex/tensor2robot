@@ -57,9 +57,7 @@ def _get_block_sizes(resnet_size):
   try:
     return choices[resnet_size]
   except KeyError:
-    err = ('Could not find layers for selected Resnet size.\n'
-           'Size received: {}; sizes allowed: {}.'.format(
-               resnet_size, list(choices.keys())))
+    err = f'Could not find layers for selected Resnet size.\nSize received: {resnet_size}; sizes allowed: {list(choices.keys())}.'
     raise ValueError(err)
 
 
@@ -75,7 +73,7 @@ def _get_resnet_scope():
   scope = tf.get_default_graph().get_name_scope()
   if scope:
     scope += '/'
-  return scope + 'resnet_model/'
+  return f'{scope}resnet_model/'
 
 
 def resnet_endpoints(model):
@@ -85,10 +83,9 @@ def resnet_endpoints(model):
   end_points = {}
   tensors = ['initial_conv', 'initial_max_pool', 'pre_final_pool',
              'final_reduce_mean', 'final_dense']
-  tensors += [
-      'block_layer{}'.format(i + 1) for i in range(len(model.block_sizes))]
+  tensors += [f'block_layer{i + 1}' for i in range(len(model.block_sizes))]
   for name in tensors:
-    tensor = graph.get_tensor_by_name('{}{}:0'.format(scope, name))
+    tensor = graph.get_tensor_by_name(f'{scope}{name}:0')
     if len(tensor.shape) == 4:
       tensor = _model_output(tensor, model.data_format)
     end_points[name] = tensor
@@ -120,11 +117,10 @@ def linear_film_generator(embedding,
       (1 + gamma) * x + beta, to better handle the initial zero-centered
       gamma.
   """
-  if enabled_block_layers:
-    if len(enabled_block_layers) != len(block_sizes):
-      raise ValueError(
-          'Got {} bools for enabled_block_layers, expected {}'.format(
-              len(enabled_block_layers), len(block_sizes)))
+  if enabled_block_layers and len(enabled_block_layers) != len(block_sizes):
+    raise ValueError(
+        f'Got {len(enabled_block_layers)} bools for enabled_block_layers, expected {len(block_sizes)}'
+    )
   # FiLM generator - just a linear projection of embedding.
   film_gamma_betas = []
   for i, num_blocks in enumerate(block_sizes):
@@ -137,9 +133,10 @@ def linear_film_generator(embedding,
       film_gamma_beta = slim.fully_connected(
           embedding,
           film_output_size,
-          scope='film{}'.format(i),
+          scope=f'film{i}',
           normalizer_fn=None,
-          activation_fn=None)
+          activation_fn=None,
+      )
       film_gamma_betas.append(tf.split(film_gamma_beta, num_blocks, axis=-1))
   return film_gamma_betas
 
@@ -177,10 +174,7 @@ def resnet_model(images,
       https://github.com/tensorflow/models/tree/master/official/r1/resnet.
   """
   # For bigger models, we want to use "bottleneck" layers
-  if resnet_size < 50:
-    bottleneck = False
-  else:
-    bottleneck = True
+  bottleneck = resnet_size >= 50
   model = resnet_lib.Model(
       resnet_size=resnet_size,
       bottleneck=bottleneck,
@@ -204,10 +198,7 @@ def resnet_model(images,
     # optimization-specific variables (e.g. Momentum, Adam Beta).
     # When initializing on TPUs, use AbstractT2RModel.init_from_checkpoint_fn.
     resnet_init_from_checkpoint_fn(pretrain_checkpoint)
-  if return_intermediate_values:
-    return resnet_endpoints(model)
-  else:
-    return final_dense
+  return resnet_endpoints(model) if return_intermediate_values else final_dense
 
 
 @gin.configurable

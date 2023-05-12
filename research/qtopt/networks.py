@@ -121,8 +121,7 @@ class GraspingModel(object):
     Returns:
       input_specifications: A dictionary to specify the input modalities.
     """
-    input_specifications = cls.create_default_input_specifications()
-    return input_specifications
+    return cls.create_default_input_specifications()
 
   def add_losses(self,
                  config,
@@ -429,17 +428,17 @@ class Grasping44FlexibleGraspParams(GraspingModel):
       """Forward pass through the network."""
       with slim.arg_scope([slim.dropout], is_training=is_training):
         with slim.arg_scope(
-            [slim.conv2d, slim.fully_connected],
-            weights_initializer=tf.truncated_normal_initializer(stddev=0.01),
-            weights_regularizer=slim.l2_regularizer(self._l2_regularization),
-            activation_fn=tf.nn.relu,
-            trainable=is_training):
+                  [slim.conv2d, slim.fully_connected],
+                  weights_initializer=tf.truncated_normal_initializer(stddev=0.01),
+                  weights_regularizer=slim.l2_regularizer(self._l2_regularization),
+                  activation_fn=tf.nn.relu,
+                  trainable=is_training):
           with slim.arg_scope(
-              [slim.conv2d, slim.max_pool2d], stride=1, padding='SAME'):
+                      [slim.conv2d, slim.max_pool2d], stride=1, padding='SAME'):
             with slim.arg_scope(
-                [slim.conv2d, slim.fully_connected],
-                normalizer_fn=slim.batch_norm,
-                normalizer_params=batch_norm):
+                          [slim.conv2d, slim.fully_connected],
+                          normalizer_fn=slim.batch_norm,
+                          normalizer_params=batch_norm):
               _, grasp_image = images
               net = slim.conv2d(
                   grasp_image,
@@ -577,10 +576,7 @@ class Grasping44FlexibleGraspParams(GraspingModel):
                   normalizer_fn=None,
                   normalizer_params=None)
               end_points['logits'] = logits
-              if softmax:
-                predictions = tf.nn.softmax(logits)
-              else:
-                predictions = tf.nn.sigmoid(logits)
+              predictions = tf.nn.softmax(logits) if softmax else tf.nn.sigmoid(logits)
               if tile_batch:
 
                 if num_classes > 1:
